@@ -1,9 +1,13 @@
-package art.redoc.sourcegenerator.utils;
+package art.redoc.sourcegenerator.conf;
+
+import art.redoc.SourceGenerator;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 public class GeneratorConfiguration {
 
@@ -43,9 +47,19 @@ public class GeneratorConfiguration {
      * 是否覆盖原文件
      */
     private final boolean override;
+    /**
+     * 主键类型
+     */
+    private final SourceGenerator.IDType idType;
 
-    public GeneratorConfiguration(final Class<?> modelClazz, final String outputType, final String outputDir,
-                                  final boolean override) {
+    private final List<String> many2OneObjectsName = new ArrayList<>();
+
+    private final List<String> one2ManyObjectsName = new ArrayList<>();
+
+    private final List<String> one2OneObjectsName = new ArrayList<>();
+
+    public GeneratorConfiguration(final Class<?> modelClazz, String entityPackageName, final String outputType, final String outputDir,
+                                  final boolean override, SourceGenerator.IDType idType) {
         this.modelClazz = modelClazz;
         this.modelProperties = new ModelProperties(modelClazz);
         this.outputDir = outputDir;
@@ -65,13 +79,13 @@ public class GeneratorConfiguration {
                         + "src.main.java.".replace(".", File.separator);
         this.modelSrcPath = this.srcRootPath + this.modelClazz.getName().replace(".", File.separator) + ".java";
         final String modelFullname = modelClazz.getName();
-        final int indexOfModelEntity = modelFullname.indexOf(".model.");
-        final int indexOfModelModel = modelFullname.indexOf(".model.");
+        final int indexOfModelEntity = modelFullname.indexOf("." + entityPackageName + ".");
+        final int indexOfModelModel = modelFullname.indexOf("." + entityPackageName + ".");
         int indexOfModel = indexOfModelEntity;
-        final int lengthModel = (".mapping.").length()-1;
+        final int lengthModel = ("." + entityPackageName + ".").length() - 1;
         if (indexOfModelEntity == -1) {
             indexOfModel = indexOfModelModel;
-            if(indexOfModelModel == -1) {
+            if (indexOfModelModel == -1) {
                 throw new RuntimeException("Given modelName is invalid.");
             }
         }
@@ -83,6 +97,7 @@ public class GeneratorConfiguration {
         } else {
             this.childPackage = null;
         }
+        this.idType = idType;
     }
 
     public String getParentPackage() {
@@ -120,4 +135,68 @@ public class GeneratorConfiguration {
     public boolean isOverride() {
         return this.override;
     }
+
+    /**
+     * Get the value of idType.
+     *
+     * @return The value of idType.
+     */
+    public SourceGenerator.IDType getIdType() {
+        return idType;
+    }
+
+    /**
+     * Get the value of many2OneObjectsName.
+     *
+     * @return The value of many2OneObjectsName.
+     */
+    public List<String> getMany2OneObjectsName() {
+        return many2OneObjectsName;
+    }
+
+    /**
+     * Set the many2OneObjectsName.
+     *
+     * @param many2OneObjectsName Many2OneObjectsName.
+     */
+    public void setMany2OneObjectsName(List<String> many2OneObjectsName) {
+        this.many2OneObjectsName.addAll(many2OneObjectsName);
+    }
+
+    /**
+     * Get the value of one2ManyObjectsName.
+     *
+     * @return The value of one2ManyObjectsName.
+     */
+    public List<String> getOne2ManyObjectsName() {
+        return one2ManyObjectsName;
+    }
+
+    /**
+     * Set the one2ManyObjectsName.
+     *
+     * @param one2ManyObjectsName One2ManyObjectsName.
+     */
+    public void setOne2ManyObjectsName(List<String> one2ManyObjectsName) {
+        this.one2ManyObjectsName.addAll(one2ManyObjectsName);
+    }
+
+    /**
+     * Get the value of one2OneObjectsName.
+     *
+     * @return The value of one2OneObjectsName.
+     */
+    public List<String> getOne2OneObjectsName() {
+        return one2OneObjectsName;
+    }
+
+    /**
+     * Set the one2OneObjectsName.
+     *
+     * @param one2OneObjectsName One2OneObjectsName.
+     */
+    public void setOne2OneObjectsName(List<String> one2OneObjectsName) {
+        this.one2OneObjectsName.addAll(one2OneObjectsName);
+    }
+
 }

@@ -1,15 +1,17 @@
 package @Package@;
 
-import @ModelPath@;
-import @RepositoryPath@;
-import @ServicePath@;
-import com.morefun.phili.common.common.conts.RequestCode;
-import com.morefun.phili.common.common.exception.CustomRuntimeException;
+import art.redoc.core.conts.CoreResponseCode;
+import art.redoc.core.exceptions.CoreRuntimeException;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import @ModelPath@;
+import @RepositoryPath@;
+import @ServicePath@;
 
 import java.util.List;
 
@@ -24,10 +26,15 @@ public class @Model@ServiceImpl implements @Model@Service {
     private @Model@Repository @model@Repository;
 
     @Override
-    @Transactional(readOnly = true)
-    public @Model@ get(@NonNull String id) {
-        final @Model@ model = @model@Repository.findById(id).orElseThrow(()-> new CustomRuntimeException(RequestCode.USER_NOT_EXISTS, String.format("id为[%s]资源不存在", id)));
+    public @Model@ get(@NonNull @IDType@ id) {
+        final @Model@ model = @model@Repository.findById(id).orElseThrow(()->
+                new CoreRuntimeException(CoreResponseCode.RESOURCE_NOT_EXISTS, String.format("id为[%s]资源不存在", id)));
         return model;
+    }
+
+    @Override
+    public Page<@Model@> getAll(Pageable pageable) {
+        return this.@model@Repository.findAll(pageable);
     }
 
     @Override
@@ -46,7 +53,7 @@ public class @Model@ServiceImpl implements @Model@Service {
     }
 
     @Override
-    public void delete(@NonNull String id) {
+    public void delete(@NonNull @IDType@ id) {
         @model@Repository.deleteById(id);
     }
 

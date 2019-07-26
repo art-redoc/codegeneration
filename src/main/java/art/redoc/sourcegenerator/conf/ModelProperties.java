@@ -1,4 +1,4 @@
-package art.redoc.sourcegenerator.utils;
+package art.redoc.sourcegenerator.conf;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ModelProperties {
 
-    private final List<ModelProperty> properties = new ArrayList<ModelProperty>();
+    private final List<ModelProperty> properties = new ArrayList<>();
 
     public ModelProperties(final Class<?> clazz) {
         final Field fields[] = clazz.getDeclaredFields();

@@ -1,13 +1,13 @@
 package @Package@;
 
+import art.redoc.core.convertors.AbstractConvertor;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.morefun.phili.common.common.convertor.AbstractConvertor;
 import @DTOPath@;
 import @ModelPath@;
 import @ServicePath@;
-import lombok.NonNull;
 
 /**
  * @Model@Convertor

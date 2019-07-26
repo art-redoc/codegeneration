@@ -1,5 +1,8 @@
 package @Package@;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import @ModelPath@;
 
 import java.util.List;
@@ -15,7 +18,15 @@ public interface @Model@Service {
      * @param id 资源实例ID
      * @return id所指向的资源实例
      */
-    @Model@ get(String id);
+    @Model@ get(@IDType@ id);
+
+    /**
+     * Get all resource.
+     *
+     * @param pageable Pageable.
+     * @return
+     */
+    Page<Test> getAll(final Pageable pageable);
 
     /**
      * 创建
@@ -46,7 +57,7 @@ public interface @Model@Service {
      *
      * @param id 资源实例ID
      */
-    void delete(String id);
+    void delete(@IDType@ id);
 
     /**
      * 批量删除

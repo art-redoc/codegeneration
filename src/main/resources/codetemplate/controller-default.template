@@ -1,27 +1,24 @@
 package @Package@;
 
-import javax.validation.Valid;
-
+import art.redoc.core.dto.PageResultDTO;
+import art.redoc.core.dto.ResultDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.morefun.phili.common.common.dto.PageResultDTO;
-import com.morefun.phili.common.common.dto.ResultDTO;
-
 import @ConvertorPath@;
 import @DTOPath@;
 import @ModelPath@;
 import @ServicePath@;
-import @RepositoryPath@;
 
-import lombok.extern.slf4j.Slf4j;
+import javax.validation.Valid;
 
 /**
  * @Model@的管理接口
@@ -45,7 +42,7 @@ public class @Model@Controller {
      */
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public PageResultDTO<@Model@DTO> search(final Pageable pageable) {
-        final Page<@Model@> models = this.@model@Repository.findAll(pageable);
+        final Page<@Model@> models = this.@model@Service.getAll(pageable);
         return this.@model@Convertor.toResultDTO(models);
     }
 
@@ -56,7 +53,7 @@ public class @Model@Controller {
      * @return 资源详细
      */
     @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResultDTO<@Model@DTO> get(@PathVariable final String id) {
+    public ResultDTO<@Model@DTO> get(@PathVariable final @IDType@ id) {
         final @Model@ model = this.@model@Service.get(id);
         return this.@model@Convertor.toResultDTO(model);
     }
@@ -82,7 +79,7 @@ public class @Model@Controller {
      * @return 更新后资源
      */
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResultDTO<@Model@DTO> update(@PathVariable final String id, @RequestBody @Valid final @Model@DTO @model@DTO) {
+    public ResultDTO<@Model@DTO> update(@PathVariable final @IDType@ id, @RequestBody @Valid final @Model@DTO @model@DTO) {
         @model@DTO.setId(id);
         final @Model@ model = this.@model@Convertor.toModel(@model@DTO);
         this.@model@Service.update(model);
@@ -96,7 +93,7 @@ public class @Model@Controller {
      * @return 操作结果
      */
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResultDTO<Void> delete(@PathVariable final String id) {
+    public ResultDTO<Void> delete(@PathVariable final @IDType@ id) {
         this.@model@Service.delete(id);
         return ResultDTO.success();
     }

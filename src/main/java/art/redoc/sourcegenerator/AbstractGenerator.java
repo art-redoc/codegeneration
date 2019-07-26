@@ -1,6 +1,6 @@
 package art.redoc.sourcegenerator;
 
-import art.redoc.sourcegenerator.utils.GeneratorConfiguration;
+import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -10,6 +10,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public abstract class AbstractGenerator implements Generator {
 
@@ -26,7 +28,7 @@ public abstract class AbstractGenerator implements Generator {
     }
 
     protected void output(final String value) {
-        if (this.config.getOutputType().equals("console")) {
+        if (this.config.getOutputType().equals("CONSOLE")) {
             System.out.println("////////////////////////////");
             System.out.println("/// " + this.method + "文件输出");
             System.out.println("////////////////////////////");
@@ -143,5 +145,20 @@ public abstract class AbstractGenerator implements Generator {
     protected String getModelNameWithHeadLow() {
         final String modelName = this.getModelName();
         return modelName.substring(0, 1).toLowerCase() + modelName.substring(1);
+    }
+
+    protected String getTemplatePath(String templatePath, String defaultTemplatePath) {
+        File templatePathFile = new File(templatePath);
+        if(templatePathFile.exists()){
+            return templatePath;
+        }else{
+            return defaultTemplatePath;
+        }
+    }
+
+    protected Map<String, String> getFilterMapWithIdType() {
+        Map<String,String> filterMap = new HashMap<>();
+        filterMap.put("@IDType@", config.getIdType().getType());
+        return filterMap;
     }
 }

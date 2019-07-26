@@ -1,6 +1,5 @@
 package art.redoc.sourcegenerator.impl;
 
-
 import art.redoc.sourcegenerator.ContentsFilter;
 
 import java.util.Map;
