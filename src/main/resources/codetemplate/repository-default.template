@@ -4,7 +4,9 @@ import @ModelPath@;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * @Model@Repository
+ * @SeparateModel@ repository.
+ *
+ * @author code generator
  */
 public interface @Model@Repository extends JpaRepository<@Model@, @IDType@> {
 

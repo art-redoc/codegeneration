@@ -16,7 +16,9 @@ import @ServicePath@;
 import java.util.List;
 
 /**
- * @Model@Service 实现类
+ * @SeparateModel@ service implement.
+ *
+ * @author code generator
  */
 @Slf4j
 @Service
@@ -27,8 +29,9 @@ public class @Model@ServiceImpl implements @Model@Service {
 
     @Override
     public @Model@ get(@NonNull @IDType@ id) {
-        final @Model@ model = @model@Repository.findById(id).orElseThrow(()->
-                new CoreRuntimeException(CoreResponseCode.RESOURCE_NOT_EXISTS, String.format("id为[%s]资源不存在", id)));
+        final @Model@ model = @model@Repository.findById(id).orElseThrow(() ->
+                new CoreRuntimeException(CoreResponseCode.RESOURCE_NOT_EXISTS,
+                        String.format("The resource with id [%s] does not exist.", id)));
         return model;
     }
 

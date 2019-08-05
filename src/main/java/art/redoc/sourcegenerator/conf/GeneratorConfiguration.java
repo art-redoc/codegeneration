@@ -48,14 +48,23 @@ public class GeneratorConfiguration {
      */
     private final boolean override;
     /**
-     * 主键类型
+     * ID type.
      */
     private final SourceGenerator.IDType idType;
 
+    /**
+     * The model name list that the model relationship is {@code @ManyToOne}.
+     */
     private final List<String> many2OneObjectsName = new ArrayList<>();
 
+    /**
+     * The model name list that the model relationship is {@code @OneToMany}.
+     */
     private final List<String> one2ManyObjectsName = new ArrayList<>();
 
+    /**
+     * The model name list that the model relationship is {@code @OneToOne}.
+     */
     private final List<String> one2OneObjectsName = new ArrayList<>();
 
     public GeneratorConfiguration(final Class<?> modelClazz, String entityPackageName, final String outputType, final String outputDir,

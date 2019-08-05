@@ -7,11 +7,11 @@ import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 import java.util.List;
 import java.util.Map;
 
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.*;
-
 public class ConvertorGenerator extends AbstractGenerator {
-    // 模板路径
+
+    // User-defined template path
     private static final String templatePath = "/codetemplate/convertor.template";
+    // Default template path
     private static final String defaultTemplatePath = "/codetemplate/convertor-default.template";
 
     private ContentsFilter filter;
@@ -30,9 +30,7 @@ public class ConvertorGenerator extends AbstractGenerator {
     @Override
     public void generate() {
         final String value = this.filter.filter(this.templateContents);
-        final List<String> content = value2contents(value);
-        removeUnusedImport(content);
-        this.output(contents2value(content));
+        this.output(optimizeCode(value));
     }
 
     private void initFilter() {
@@ -42,18 +40,23 @@ public class ConvertorGenerator extends AbstractGenerator {
         filterMap.put("@ModelPath@", this.getModelPath());
         filterMap.put("@ServicePath@", this.getClassPath("service"));
         filterMap.put("@Model@", this.getModelName());
+        filterMap.put("@SeparateModel@", this.getSeparateModelName());
         filterMap.put("@model@", this.getModelNameWithHeadLow());
         filterMap.put(" +@setModelCode@", this.setModelCode);
         filterMap.put(" +@setDTOCode@", this.setDTOCode);
         this.filter = new ReplaceFilter(filterMap);
     }
 
+    /**
+     * Generate getter and setter of properties in convertor.
+     */
     private void initConvertingCode() {
         final StringBuilder setModelCode = new StringBuilder();
         final StringBuilder setDTOCode = new StringBuilder();
         final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
         final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
         final List<String> one2ManyObjectsName = config.getOne2ManyObjectsName();
+        // Filter out other join model and generate the remaining properties.
         this.config.getModelProperties().getProperties().stream().filter(x ->
                 !one2OneObjectsName.contains(x.getName())
                         && !many2OneObjectsName.contains(x.getName())

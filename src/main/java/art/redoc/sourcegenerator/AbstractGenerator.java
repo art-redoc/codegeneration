@@ -1,7 +1,7 @@
 package art.redoc.sourcegenerator;
 
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
-import org.apache.commons.io.IOUtils;
+import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -11,7 +11,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.addEmptyLine;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.addEmptyLineInTheLastLine;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeEmptyLineAtEndMethod;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedImport;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
 
 public abstract class AbstractGenerator implements Generator {
 
@@ -92,7 +102,7 @@ public abstract class AbstractGenerator implements Generator {
         try {
             final InputStream is = this.getInputStream(path);
             final ByteArrayOutputStream os = new ByteArrayOutputStream();
-            IOUtils.copy(is, os);
+            CodeGenerateUtils.copy(is, os);
             return os.toString("UTF-8");
         } catch (final IOException e) {
             throw new RuntimeException(e.getMessage(), e);
@@ -138,6 +148,27 @@ public abstract class AbstractGenerator implements Generator {
         return this.config.getModelClazz().getSimpleName();
     }
 
+    protected String getSeparateModelName() {
+        String modelName = getModelName();
+        modelName = String.valueOf(modelName.charAt(0)).toUpperCase()
+                .concat(modelName.substring(1));
+        StringBuffer sb = new StringBuffer();
+        Pattern pattern = Pattern.compile("[A-Z]([a-z\\d]+)?");
+        Matcher matcher = pattern.matcher(modelName);
+        boolean isFirstWord = true;
+        while (matcher.find()) {
+            String word = matcher.group();
+            if (isFirstWord) {
+                sb.append(word);
+                isFirstWord = false;
+            } else {
+                sb.append(word.toLowerCase());
+            }
+            sb.append(matcher.end() == modelName.length() ? "" : " ");
+        }
+        return sb.toString();
+    }
+
     protected String getModelPath() {
         return this.config.getModelClazz().getName();
     }
@@ -148,17 +179,22 @@ public abstract class AbstractGenerator implements Generator {
     }
 
     protected String getTemplatePath(String templatePath, String defaultTemplatePath) {
-        File templatePathFile = new File(templatePath);
-        if(templatePathFile.exists()){
-            return templatePath;
-        }else{
-            return defaultTemplatePath;
-        }
+        final InputStream inputStream = AbstractGenerator.class.getResourceAsStream(templatePath);
+        return inputStream == null ? defaultTemplatePath : templatePath;
     }
 
     protected Map<String, String> getFilterMapWithIdType() {
-        Map<String,String> filterMap = new HashMap<>();
+        Map<String, String> filterMap = new HashMap<>();
         filterMap.put("@IDType@", config.getIdType().getType());
         return filterMap;
+    }
+
+    protected String optimizeCode(String value) {
+        final List<String> contents = value2contents(value);
+        removeUnusedImport(contents);
+        addEmptyLine(contents);
+        removeEmptyLineAtEndMethod(contents);
+        addEmptyLineInTheLastLine(contents);
+        return contents2value(contents);
     }
 }

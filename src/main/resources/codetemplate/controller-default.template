@@ -21,9 +21,9 @@ import @ServicePath@;
 import javax.validation.Valid;
 
 /**
- * @Model@的管理接口
+ * @SeparateModel@ controller.
  *
- * @author auto
+ * @author code generator
  */
 @Slf4j
 @RestController
@@ -35,10 +35,10 @@ public class @Model@Controller {
     private @Model@Convertor @model@Convertor;
 
     /**
-     * 获取分页数据
+     * Get model list.
      *
-     * @param pageable 分页+排序参数
-     * @return 分页数据
+     * @param pageable Paging related params.
+     * @return Model list.
      */
     @RequestMapping(value = "/list", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public PageResultDTO<@Model@DTO> search(final Pageable pageable) {
@@ -47,52 +47,52 @@ public class @Model@Controller {
     }
 
     /**
-     * 取得详细数据
+     * Get detail model by unique ID.
      *
-     * @param id 资源ID
-     * @return 资源详细
+     * @param id Unique ID.
+     * @return Detail model.
      */
-    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces=MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResultDTO<@Model@DTO> get(@PathVariable final @IDType@ id) {
         final @Model@ model = this.@model@Service.get(id);
         return this.@model@Convertor.toResultDTO(model);
     }
 
     /**
-     * 新建操作
+     * Create model.
      *
-     * @param @model@DTO 新建资源的DTO
-     * @return 新建资源
+     * @param @model@DTO The model DTO.
+     * @return DTO of the model that needs to be created.
      */
-    @RequestMapping(method = RequestMethod.POST, produces=MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResultDTO<@Model@DTO> create(@RequestBody @Valid final @Model@DTO @model@DTO) {
         final @Model@ model = this.@model@Convertor.toModel(@model@DTO);
         this.@model@Service.create(model);
         return this.@model@Convertor.toResultDTO(model);
     }
-    
+
     /**
-     * 更新操作
+     * Update model.
      *
-     * @param id 更新资源的ID
-     * @param @model@DTO 更新资源的DTO
-     * @return 更新后资源
+     * @param id  Unique ID.
+     * @param dto DTO of the model that needs to be updated.
+     * @return Updated model DTO.
      */
-    @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces=MediaType.APPLICATION_JSON_VALUE)
-    public ResultDTO<@Model@DTO> update(@PathVariable final @IDType@ id, @RequestBody @Valid final @Model@DTO @model@DTO) {
-        @model@DTO.setId(id);
-        final @Model@ model = this.@model@Convertor.toModel(@model@DTO);
+    @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResultDTO<@Model@DTO> update(@PathVariable final @IDType@ id, @RequestBody @Valid final @Model@DTO dto) {
+        dto.setId(id);
+        final @Model@ model = this.@model@Convertor.toModel(dto);
         this.@model@Service.update(model);
         return this.@model@Convertor.toResultDTO(model);
     }
 
     /**
-     * 删除操作
+     * Delete model.
      *
-     * @param id 资源ID
-     * @return 操作结果
+     * @param id Unique ID.
+     * @return The result of the model being deleted.
      */
-    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces=MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/{id}", method = RequestMethod.DELETE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResultDTO<Void> delete(@PathVariable final @IDType@ id) {
         this.@model@Service.delete(id);
         return ResultDTO.success();

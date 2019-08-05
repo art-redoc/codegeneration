@@ -1,37 +1,34 @@
 package art.redoc.sourcegenerator.impl;
 
 import art.redoc.sourcegenerator.AbstractGenerator;
-import art.redoc.sourcegenerator.ContentsFilter;
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 import art.redoc.sourcegenerator.conts.CodeGenerateConts;
 import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
-import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.*;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedContent;
+import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
 
 public class DtoGenerator extends AbstractGenerator {
-
-    private ContentsFilter filter;
 
     private final String modelSource;
 
     public DtoGenerator(final GeneratorConfiguration config) {
         super(config, "dto");
         final String modelSource = this.getFileString(this.config.getModelSrcPath());
-        final List<String> contentLine = this.getContentLine();
+        final List<String> contentLine = this.getContents();
         this.modelSource = this.initApiDocs(modelSource);
         checkMany2Many();
-        this.initFilter();
         handleManyToOne(contentLine);
         handleOneToMany(contentLine);
         handleOneToOne(contentLine);
@@ -39,9 +36,9 @@ public class DtoGenerator extends AbstractGenerator {
 
     // 初始化API文档信息
     private String initApiDocs(final String source) {
-        final Pattern pattern = Pattern.compile("(/\\*\\*\\s+\\*\\s)(.+)(\\s+\\*/)");
+//        final Pattern pattern = Pattern.compile("(/\\*\\*\\s+\\*\\s)(.+)(\\s+\\*/)");
         final String result = source;
-        final Matcher matcher = pattern.matcher(source);
+//        final Matcher matcher = pattern.matcher(source);
         //        while (matcher.find()) {
         //            final String originalStr = matcher.group(0);
         //            final String docStr = matcher.group(2);
@@ -59,12 +56,42 @@ public class DtoGenerator extends AbstractGenerator {
 
     @Override
     public void generate() {
-        final String value = this.filter.filter(this.modelSource);
-        final List<String> content = removeJoinObjectsCode(value);
-        removeUnusedImport(content);
-        formatCode(content);
-        addJoinObjectsCode(content);
-        this.output(contents2value(content));
+        final String value = this.removeAndReplaceUnusedCode4Dto(this.modelSource);
+        final List<String> contents = removeJoinObjectsCode(value);
+        addJoinObjectsCode(contents);
+        generateJavaDoc(contents);
+        this.output(this.optimizeCode(contents2value(contents)));
+    }
+
+    private void generateJavaDoc(List<String> contents) {
+        final Pattern importCompile = Pattern.compile("import\\s.*");
+        final Pattern lastCompile = Pattern.compile("@[a-zA-Z].*|public\\sclass\\s.*");
+        int importIndex = 0;
+        for (int i = 0; i < contents.size(); i++) {
+            final String content = contents.get(i);
+            if (importCompile.matcher(content).matches()) {
+                importIndex = i;
+            }
+        }
+
+        for (int i = importIndex + 1; i < contents.size(); i++) {
+            final String content = contents.get(i);
+            if (lastCompile.matcher(content).matches()) {
+                break;
+            }
+            contents.set(i, CodeGenerateConts.TO_BE_REMOVED);
+        }
+        removeUnusedContent(contents);
+        List<String> comments = new ArrayList<>();
+        comments.add("");
+        comments.add("/**");
+        comments.add(" * " + this.getSeparateModelName() + " DTO.");
+        comments.add(" *");
+        comments.add(" * @author code generator");
+        comments.add(" */");
+        final int index = importIndex + 1;
+        Collections.reverse(comments);
+        comments.forEach(x -> contents.add(index, x));
     }
 
     private void addJoinObjectsCode(List<String> content) {
@@ -77,10 +104,8 @@ public class DtoGenerator extends AbstractGenerator {
         }
         final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
         final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
-        final List<String> one2ManyObjectsName = config.getOne2ManyObjectsName();
         generateJoinObjectsCode(content, classIndex, one2OneObjectsName);
         generateJoinObjectsCode(content, classIndex, many2OneObjectsName);
-        generateJoinObjectsCode(content, classIndex, one2ManyObjectsName);
     }
 
     private void generateJoinObjectsCode(List<String> content, Integer classIndex, List<String> objectsName) {
@@ -92,7 +117,7 @@ public class DtoGenerator extends AbstractGenerator {
     }
 
     private List<String> removeJoinObjectsCode(String value) {
-        final List<String> contents = CodeGenerateUtils.value2contents(value);
+        final List<String> contents = value2contents(value);
         final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
         final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
         final List<String> one2ManyObjectsName = config.getOne2ManyObjectsName();
@@ -107,19 +132,29 @@ public class DtoGenerator extends AbstractGenerator {
             addToBeRemovedContent(toBeRemoved, one2ManyObjectsName, content, contents, i);
         }
         toBeRemoved.forEach(x -> x.forEach(y -> contents.set(y, CodeGenerateConts.TO_BE_REMOVED)));
-        contents.removeAll(Arrays.asList(CodeGenerateConts.TO_BE_REMOVED));
+        removeUnusedContent(contents);
         return contents;
     }
 
-    private void addToBeRemovedContent(List<List<Integer>> toBeRemoved, List<String> one2OneObjectsName, String content,
+    /**
+     * 标记需要被删除的content，针对三种情况的table join，one2one many2one one2many.
+     *
+     * @param toBeRemoved
+     * @param objectsNames
+     * @param content
+     * @param contents
+     * @param index
+     */
+    private void addToBeRemovedContent(List<List<Integer>> toBeRemoved, List<String> objectsNames, String content,
                                        List<String> contents, int index) {
-        one2OneObjectsName.forEach(one2Many -> {
+        objectsNames.forEach(objectsName -> {
             List<Integer> toBeRemovedIndex = new ArrayList<>();
             // todo pattern
-            if (content.contains("private") && (content.contains(" " + one2Many + " ") || content.contains(" " + one2Many + ";"))) {
+            if (content.contains("private") && (content.contains(" " + objectsName + " ") || content.contains(" " + objectsName + ";"))) {
                 toBeRemovedIndex.add(index);
                 int current = index - 1;
-                while (!contents.get(current).contains("private")) {
+                //需要删除 table join 字段上那些多于的注解，比如 @ManyToOne @NotNull 等等 一口气都删了
+                while (!contents.get(current).contains("private") && !contents.get(current).contains(" class ")) {
                     toBeRemovedIndex.add(current);
                     current--;
                 }
@@ -130,86 +165,95 @@ public class DtoGenerator extends AbstractGenerator {
         });
     }
 
-    private void handleOneToMany(List<String> contentLine) {
-        final Iterator<String> iterator = contentLine.iterator();
-        List<String> one2ManyObject = new ArrayList<>();
-        while (iterator.hasNext()) {
-            final String next = iterator.next();
-            if (next.contains("@OneToMany")) {
-                String content = iterator.next();
-                while (CodeGenerateUtils.isBlank(content) || !content.contains("private")) {
-                    content = iterator.next();
-                }
-                one2ManyObject.add(content.trim().replaceAll(" +", " ").split(" ")[2].replace(";", ""));
-            }
-        }
+    private void handleOneToMany(List<String> contents) {
+        List<String> one2ManyObject = getJoinObjectsByAnnotation(contents, "@OneToMany");
         config.setOne2ManyObjectsName(one2ManyObject);
     }
 
-    private void handleManyToOne(List<String> contentLine) {
-        final Iterator<String> iterator = contentLine.iterator();
-        List<String> many2OneObject = new ArrayList<>();
-        while (iterator.hasNext()) {
-            final String next = iterator.next();
-            if (next.contains("@ManyToOne")) {
-                String content = iterator.next();
-                while (CodeGenerateUtils.isBlank(content) || !content.contains("private")) {
-                    content = iterator.next();
-                }
-                many2OneObject.add(content.trim().replaceAll(" +", " ").split(" ")[2].replace(";", ""));
-            }
-        }
+    private void handleManyToOne(List<String> contents) {
+        List<String> many2OneObject = getJoinObjectsByAnnotation(contents, "@ManyToOne");
         config.setMany2OneObjectsName(many2OneObject);
     }
 
-    private void handleOneToOne(List<String> contentLine) {
-        final Iterator<String> iterator = contentLine.iterator();
-        List<String> one2OneObject = new ArrayList<>();
-        while (iterator.hasNext()) {
-            final String next = iterator.next();
-            if (next.contains("@OneToOne")) {
-                String content = iterator.next();
-                while (CodeGenerateUtils.isBlank(content) || !content.contains("private")) {
-                    content = iterator.next();
-                }
-                one2OneObject.add(content.trim().replaceAll(" +", " ").split(" ")[2].replace(";", ""));
-            }
-        }
+    private void handleOneToOne(List<String> contents) {
+        List<String> one2OneObject = getJoinObjectsByAnnotation(contents, "@OneToOne");
         config.setOne2OneObjectsName(one2OneObject);
     }
 
-    private List<String> getContentLine() {
+    private List<String> getJoinObjectsByAnnotation(List<String> contents, String annotationName) {
+        final List<String> result = new ArrayList<>();
+        final Iterator<String> iterator = contents.iterator();
+        final Pattern compile = Pattern.compile("\\s*private\\s+.*;");
+        while (iterator.hasNext()) {
+            final String next = iterator.next();
+            if (next.contains(annotationName)) {
+                String content = iterator.next();
+                while (!compile.matcher(content).matches()) {
+                    content = iterator.next();
+                }
+                result.add(content.trim().replaceAll(" +", " ").split(" ")[2].replace(";", ""));
+            }
+        }
+        return result;
+    }
+
+    private List<String> getContents() {
         try {
             final InputStream is = this.getInputStream(this.config.getModelSrcPath());
-            return IOUtils.readLines(is, "UTF-8");
+            return CodeGenerateUtils.readLines(is, "UTF-8");
         } catch (IOException e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    private void initFilter() {
-        final Map<String, String> filterMap = super.getFilterMapWithIdType();
-        final String packageStr = "package " + this.getPackage("dto") + ";" + System.lineSeparator()
-                + "import art.redoc.base.dto.AbstractAuditDTO;";
-        filterMap.put("package.+;", packageStr);
-        filterMap.put("import javax\\.persistence.+\\s+", "");
-        filterMap.put("@Entity\\s+", "");
-        filterMap.put("@Table.+\\s+", "");
-        filterMap.put("@Lob\\s+", "");
-        filterMap.put("\\r\\n\\s+.+serialVersionUID+.+\\n?", "");
-        filterMap.put("\\n\\s+@Column.+", "");
-        filterMap.put("\\n\\s+@Enumerated.+", "");
-//        filterMap.put("\\n\\s+@OneToOne.+", "");
-//        filterMap.put("\\n\\s+@OneToMany.+", "");
-//        filterMap.put("\\n\\s+@ManyToMany.+", "");
-//        filterMap.put("\\n\\s+@ManyToOne.+", "");
-        filterMap.put("\\n\\s+@org.hibernate.annotations.Type.+", "");
-        filterMap.put("\\n\\s+@Table.+", "");
-        filterMap.put("\\n\\s+@Temporal.+", "");
-        final String dtoClass = "public class @Model@DTO extends AbstractAuditDTO {".replace("@Model@",
-                this.config.getModelClazz().getSimpleName());
-        filterMap.put("public class.+\\{", dtoClass);
-        this.filter = new ReplaceFilter(filterMap);
+
+    private String removeAndReplaceUnusedCode4Dto(String modelSource) {
+        final List<String> contents = value2contents(modelSource);
+        removeUnusedCode(contents);
+        replaceCode(contents);
+        return contents2value(contents);
+    }
+
+    private void replaceCode(List<String> contents) {
+        Map<Pattern, String> patterns = new HashMap<>();
+        patterns.put(Pattern.compile("package.+;"), "package " + this.getPackage("dto") + ";" + System.lineSeparator()
+                + "import art.redoc.base.dto.AbstractAuditDTO;");
+        patterns.put(Pattern.compile("public class.+\\{"), "public class " + this.config.getModelClazz().getSimpleName() + "DTO extends " +
+                "AbstractAuditDTO {");
+        patterns.put(Pattern.compile("@IDType@"), config.getIdType().getType());
+        for (int i = 0; i < contents.size(); i++) {
+            String content = contents.get(i);
+            final int index = i;
+            patterns.forEach((k, v) -> {
+                if (k.matcher(content).matches()) {
+                    contents.set(index, v);
+                }
+            });
+        }
+    }
+
+    private void removeUnusedCode(List<String> contents) {
+        List<Pattern> patterns = new ArrayList<>();
+        patterns.add(Pattern.compile("import javax\\.persistence+.+;"));
+        patterns.add(Pattern.compile("\\s*@Entity+.*"));
+        patterns.add(Pattern.compile("\\s*@Table+.*"));
+        patterns.add(Pattern.compile("\\s*@Index+.*"));
+        patterns.add(Pattern.compile("\\s*.+serialVersionUID.+;"));
+        patterns.add(Pattern.compile("\\s*@Lob+.*"));
+        patterns.add(Pattern.compile("\\s*@Column.*"));
+        patterns.add(Pattern.compile("\\s*@Enumerated.*"));
+        patterns.add(Pattern.compile("\\s*\\(type = \"yes_no\"\\).*"));
+        patterns.add(Pattern.compile("\\s*@Temporal.*"));
+        for (int i = 0; i < contents.size(); i++) {
+            String content = contents.get(i);
+            final int index = i;
+            patterns.forEach(x -> {
+                if (x.matcher(content).matches()) {
+                    contents.set(index, CodeGenerateConts.TO_BE_REMOVED);
+                }
+            });
+        }
+        removeUnusedContent(contents);
     }
 }
