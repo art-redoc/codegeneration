@@ -6,11 +6,15 @@ import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 
 import java.util.Map;
 
-
+/**
+ * Controller generator.
+ *
+ * @author redoc
+ */
 public class ControllerGenerator extends AbstractGenerator {
 
     // User-defined template path
-    private static final String templatePath = "/codetemplate/controller.template";
+    private static final String customTemplatePath = "/codetemplate/controller.template";
     // Default template path
     private static final String defaultTemplatePath = "/codetemplate/controller-default.template";
 
@@ -21,7 +25,7 @@ public class ControllerGenerator extends AbstractGenerator {
     public ControllerGenerator(final GeneratorConfiguration config) {
         super(config, "controller");
         this.initFilter();
-        this.templateContents = this.getFileString(this.getTemplatePath(templatePath, defaultTemplatePath));
+        this.templateContents = this.getFileString(this.getTemplatePath(customTemplatePath, defaultTemplatePath));
     }
 
     @Override
@@ -31,12 +35,12 @@ public class ControllerGenerator extends AbstractGenerator {
     }
 
     private void initFilter() {
-        final Map<String, String> filterMap = super.getFilterMapWithIdType();
+        final Map<String, String> filterMap = super.createFilterMapWithIdType();
         filterMap.put("@Package@", this.getPackage("controller"));
         filterMap.put("@ModelPath@", this.getModelPath());
         filterMap.put("@Model@", this.getModelName());
         filterMap.put("@SeparateModel@", this.getSeparateModelName());
-        filterMap.put("@model@", this.getModelNameWithHeadLow());
+        filterMap.put("@model@", this.getModelNameWithFirstLetterLowercase());
         filterMap.put("@DTOPath@", this.getClassPath("dto"));
         filterMap.put("@ConvertorPath@", this.getClassPath("convertor"));
         filterMap.put("@ServicePath@", this.getClassPath("service"));

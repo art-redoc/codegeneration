@@ -11,10 +11,15 @@ import java.util.Map;
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
 
+/**
+ * Repository generator.
+ *
+ * @author redoc
+ */
 public class RepositoryGenerator extends AbstractGenerator {
 
     // User-defined template path
-    private static final String templatePath = "/codetemplate/repository.template";
+    private static final String customTemplatePath = "/codetemplate/repository.template";
     // Default template path
     private static final String defaultTemplatePath = "/codetemplate/repository-default.template";
 
@@ -25,7 +30,7 @@ public class RepositoryGenerator extends AbstractGenerator {
     public RepositoryGenerator(final GeneratorConfiguration config) {
         super(config, "repository");
         this.initFilter();
-        this.templateContents = this.getFileString(this.getTemplatePath(templatePath, defaultTemplatePath));
+        this.templateContents = this.getFileString(this.getTemplatePath(customTemplatePath, defaultTemplatePath));
     }
 
     @Override
@@ -81,7 +86,7 @@ public class RepositoryGenerator extends AbstractGenerator {
     }
 
     private void initFilter() {
-        final Map<String, String> filterMap = super.getFilterMapWithIdType();
+        final Map<String, String> filterMap = super.createFilterMapWithIdType();
         filterMap.put("@Package@", this.getPackage("repository"));
         filterMap.put("@ModelPath@", this.getModelPath());
         filterMap.put("@Model@", this.getModelName());

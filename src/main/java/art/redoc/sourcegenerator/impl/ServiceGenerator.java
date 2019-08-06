@@ -6,10 +6,15 @@ import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 
 import java.util.Map;
 
+/**
+ * Service generator.
+ *
+ * @author redoc
+ */
 public class ServiceGenerator extends AbstractGenerator {
 
     // User-defined template path
-    private static final String templatePath = "/codetemplate/service.template";
+    private static final String customTemplatePath = "/codetemplate/service.template";
     // Default template path
     private static final String defaultTemplatePath = "/codetemplate/service-default.template";
 
@@ -20,7 +25,7 @@ public class ServiceGenerator extends AbstractGenerator {
     public ServiceGenerator(final GeneratorConfiguration config) {
         super(config, "service");
         this.initFilter();
-        this.templateContents = this.getFileString(this.getTemplatePath(templatePath, defaultTemplatePath));
+        this.templateContents = this.getFileString(this.getTemplatePath(customTemplatePath, defaultTemplatePath));
     }
 
     @Override
@@ -31,7 +36,7 @@ public class ServiceGenerator extends AbstractGenerator {
 
     private void initFilter() {
 
-        final Map<String, String> serviceFilterMap = super.getFilterMapWithIdType();
+        final Map<String, String> serviceFilterMap = super.createFilterMapWithIdType();
         serviceFilterMap.put("@Package@", this.getPackage("service"));
         serviceFilterMap.put("@ModelPath@", this.getModelPath());
         serviceFilterMap.put("@Model@", this.getModelName());

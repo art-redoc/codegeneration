@@ -6,6 +6,11 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Model properties.
+ *
+ * @author redoc
+ */
 public class ModelProperties {
 
     private final List<ModelProperty> properties = new ArrayList<>();

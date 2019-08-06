@@ -23,24 +23,43 @@ import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeEmptyLineA
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedImport;
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
 
+/**
+ * Abstract Generator.
+ *
+ * @author redoc
+ */
 public abstract class AbstractGenerator implements Generator {
 
+    /**
+     * This class.
+     */
     protected Class<?> clazz;
 
     protected String method;
 
     protected GeneratorConfiguration config;
 
+    /**
+     * Constructor.
+     *
+     * @param config Configuration.
+     * @param method Generated method.
+     */
     protected AbstractGenerator(final GeneratorConfiguration config, final String method) {
         this.method = method;
         this.config = config;
         this.clazz = this.getClass();
     }
 
+    /**
+     * Output value to file.
+     *
+     * @param value Resource value.
+     */
     protected void output(final String value) {
         if (this.config.getOutputType().equals("CONSOLE")) {
             System.out.println("////////////////////////////");
-            System.out.println("/// " + this.method + "文件输出");
+            System.out.println("/// " + this.method + "file output");
             System.out.println("////////////////////////////");
             System.out.println(value);
             System.out.println();
@@ -49,9 +68,10 @@ public abstract class AbstractGenerator implements Generator {
             final String outputPath = this.getFileOutputPath();
             final File outputFile = new File(outputPath);
             if (!this.config.isOverride() && outputFile.exists()) {
-                System.out.println(outputPath + " 文件已存在，非强制覆盖模式下，不执行写入操作，生成代码如下：");
+                System.out.println(outputPath + "The file already exists and the override is false, the override operation is not allowed, " +
+                        "and the generated code is as follows:");
                 System.out.println("////////////////////////////");
-                System.out.println("/// " + this.method + "文件输出");
+                System.out.println("/// " + this.method + "file output");
                 System.out.println("////////////////////////////");
                 System.out.println(value);
                 System.out.println();
@@ -62,27 +82,25 @@ public abstract class AbstractGenerator implements Generator {
             if (!parent.exists()) {
                 parent.mkdirs();
             }
-            FileOutputStream os = null;
-            try {
-                os = new FileOutputStream(outputFile);
+
+            try (FileOutputStream os = new FileOutputStream(outputFile)) {
+
                 os.write(value.getBytes("UTF-8"));
-                System.out.println("****** " + this.method + "文件生成 ******");
+                System.out.println("****** " + this.method + "generated file ******");
                 System.out.println(outputPath);
             } catch (final IOException e) {
                 e.printStackTrace();
-            } finally {
-                if (os == null) {
-                    return;
-                }
-                try {
-                    os.close();
-                } catch (final IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
     }
 
+    /**
+     * Get file IO.
+     *
+     * @param path File path.
+     * @return IO.
+     * @throws IOException IO exception.
+     */
     protected InputStream getInputStream(final String path) throws IOException {
         InputStream is = this.clazz.getResourceAsStream(path);
         if (is != null) {
@@ -98,10 +116,15 @@ public abstract class AbstractGenerator implements Generator {
         return is;
     }
 
+    /**
+     * Get resource value
+     *
+     * @param path File path.
+     * @return Resource value.
+     */
     protected String getFileString(final String path) {
-        try {
-            final InputStream is = this.getInputStream(path);
-            final ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try (final InputStream is = this.getInputStream(path);
+             final ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             CodeGenerateUtils.copy(is, os);
             return os.toString("UTF-8");
         } catch (final IOException e) {
@@ -109,6 +132,12 @@ public abstract class AbstractGenerator implements Generator {
         }
     }
 
+    /**
+     * Get resource package.
+     *
+     * @param method Generated method.
+     * @return Package name.
+     */
     protected String getPackage(String method) {
         String endPackage = "";
         if (method.equals("serviceImpl")) {
@@ -122,11 +151,22 @@ public abstract class AbstractGenerator implements Generator {
         }
     }
 
+    /**
+     * Get file output path.
+     *
+     * @return Output path.
+     */
     protected String getFileOutputPath() {
         final String classPackage = this.getClassPath(this.method);
         return this.config.getSrcRootPath() + classPackage.replace(".", File.separator) + ".java";
     }
 
+    /**
+     * Get class path.
+     *
+     * @param method Generated method.
+     * @return Class path.
+     */
     protected String getClassPath(final String method) {
         if ("model".equals(method)) {
             return this.getModelPath();
@@ -135,6 +175,12 @@ public abstract class AbstractGenerator implements Generator {
         return packagePath + "." + this.getClassName(method);
     }
 
+    /**
+     * Get class name.
+     *
+     * @param method Generated method.
+     * @return Class name.
+     */
     protected String getClassName(final String method) {
         if ("model".equals(method)) {
             return this.getModelName();
@@ -144,10 +190,20 @@ public abstract class AbstractGenerator implements Generator {
         return this.getModelName() + method.substring(0, 1).toUpperCase() + method.substring(1);
     }
 
+    /**
+     * Get model name.
+     *
+     * @return Model name.
+     */
     protected String getModelName() {
         return this.config.getModelClazz().getSimpleName();
     }
 
+    /**
+     * Get separate model name.
+     *
+     * @return Separate model name. e.g. GoodsOrder -> Goods order.
+     */
     protected String getSeparateModelName() {
         String modelName = getModelName();
         modelName = String.valueOf(modelName.charAt(0)).toUpperCase()
@@ -169,26 +225,54 @@ public abstract class AbstractGenerator implements Generator {
         return sb.toString();
     }
 
+    /**
+     * Get model path.
+     *
+     * @return Model path.
+     */
     protected String getModelPath() {
         return this.config.getModelClazz().getName();
     }
 
-    protected String getModelNameWithHeadLow() {
+    /**
+     * Get model name that the first letter is lowercase.
+     *
+     * @return Model name that the first letter is lowercase.
+     */
+    protected String getModelNameWithFirstLetterLowercase() {
         final String modelName = this.getModelName();
         return modelName.substring(0, 1).toLowerCase() + modelName.substring(1);
     }
 
-    protected String getTemplatePath(String templatePath, String defaultTemplatePath) {
-        final InputStream inputStream = AbstractGenerator.class.getResourceAsStream(templatePath);
-        return inputStream == null ? defaultTemplatePath : templatePath;
+    /**
+     * Get template path.
+     *
+     * @param customTemplatePath  Custom template path.
+     * @param defaultTemplatePath Default template path.
+     * @return
+     */
+    protected String getTemplatePath(String customTemplatePath, String defaultTemplatePath) {
+        final InputStream inputStream = AbstractGenerator.class.getResourceAsStream(customTemplatePath);
+        return inputStream == null ? defaultTemplatePath : customTemplatePath;
     }
 
-    protected Map<String, String> getFilterMapWithIdType() {
+    /**
+     * Create a filter map with ID type.
+     *
+     * @return Filter map.
+     */
+    protected Map<String, String> createFilterMapWithIdType() {
         Map<String, String> filterMap = new HashMap<>();
         filterMap.put("@IDType@", config.getIdType().getType());
         return filterMap;
     }
 
+    /**
+     * Optimize the code.
+     *
+     * @param value Resource value.
+     * @return Target value.
+     */
     protected String optimizeCode(String value) {
         final List<String> contents = value2contents(value);
         removeUnusedImport(contents);

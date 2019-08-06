@@ -71,7 +71,7 @@ public class SourceGenerator {
      * @throws ClassNotFoundException
      */
     public static void generate(final String modelBasePackage, String[] models, String entityPackageName) throws ClassNotFoundException {
-        generate(modelBasePackage, models, entityPackageName, Output.FILE, true, IDType.LONG, null);
+        generate(modelBasePackage, models, entityPackageName, Output.FILE, false, IDType.LONG, null);
     }
 
     /**
@@ -168,7 +168,7 @@ public class SourceGenerator {
         }
         if (errors.size() != 0) {
             final String result = String.join(",", errors);
-            throw new ClassNotFoundException(String.format("models array contains a model [%s] that doesn't exist, please check the " +
+            throw new ClassNotFoundException(String.format("Models array contains a model [%s] that doesn't exist, please check the " +
                     "parameters.", result));
         }
     }

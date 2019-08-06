@@ -1,6 +1,6 @@
 package art.redoc.sourcegenerator.utils;
 
-import art.redoc.sourcegenerator.conts.CodeGenerateConts;
+import art.redoc.sourcegenerator.conts.CodeGenerateConstants;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -205,7 +205,7 @@ public class CodeGenerateUtils {
      * @param contents Contents.
      */
     public static void removeUnusedContent(List<String> contents) {
-        contents.removeAll(Arrays.asList(CodeGenerateConts.TO_BE_REMOVED));
+        contents.removeAll(Arrays.asList(CodeGenerateConstants.TO_BE_REMOVED));
     }
 
     /**
@@ -230,7 +230,7 @@ public class CodeGenerateUtils {
             int currentIndex = contents.size() - 2;
             String currentContent = contents.get(currentIndex);
             while (isBlank(currentContent)) {
-                contents.set(currentIndex, CodeGenerateConts.TO_BE_REMOVED);
+                contents.set(currentIndex, CodeGenerateConstants.TO_BE_REMOVED);
                 currentIndex--;
                 currentContent = contents.get(currentIndex);
             }
@@ -263,7 +263,7 @@ public class CodeGenerateUtils {
                 }
             });
         });
-        imports.stream().filter(x -> x.getRemoved()).forEach(x -> contents.set(x.getIndex(), CodeGenerateConts.TO_BE_REMOVED));
+        imports.stream().filter(x -> x.getRemoved()).forEach(x -> contents.set(x.getIndex(), CodeGenerateConstants.TO_BE_REMOVED));
         removeUnusedContent(contents);
     }
 
@@ -338,7 +338,7 @@ public class CodeGenerateUtils {
         for (int i = 0; i < contents.size(); i++) {
             final String content = contents.get(i);
             if (i > 0 && isBlank(contents.get(i - 1)) && isBlank(content)) {
-                contents.set(i - 1, CodeGenerateConts.TO_BE_REMOVED);
+                contents.set(i - 1, CodeGenerateConstants.TO_BE_REMOVED);
             }
         }
         removeUnusedContent(contents);

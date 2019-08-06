@@ -4,6 +4,11 @@ import art.redoc.sourcegenerator.ContentsFilter;
 
 import java.util.Map;
 
+/**
+ * Replace filter.
+ *
+ * @author redoc
+ */
 public class ReplaceFilter implements ContentsFilter {
 
     Map<String, String> replaceMap;

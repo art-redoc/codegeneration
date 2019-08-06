@@ -7,10 +7,15 @@ import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Convertor generator.
+ *
+ * @author redoc
+ */
 public class ConvertorGenerator extends AbstractGenerator {
 
     // User-defined template path
-    private static final String templatePath = "/codetemplate/convertor.template";
+    private static final String customTemplatePath = "/codetemplate/convertor.template";
     // Default template path
     private static final String defaultTemplatePath = "/codetemplate/convertor-default.template";
 
@@ -24,7 +29,7 @@ public class ConvertorGenerator extends AbstractGenerator {
         super(config, "convertor");
         this.initConvertingCode();
         this.initFilter();
-        this.templateContents = this.getFileString(this.getTemplatePath(templatePath, defaultTemplatePath));
+        this.templateContents = this.getFileString(this.getTemplatePath(customTemplatePath, defaultTemplatePath));
     }
 
     @Override
@@ -34,14 +39,14 @@ public class ConvertorGenerator extends AbstractGenerator {
     }
 
     private void initFilter() {
-        final Map<String, String> filterMap = super.getFilterMapWithIdType();
+        final Map<String, String> filterMap = super.createFilterMapWithIdType();
         filterMap.put("@Package@", this.getPackage("convertor"));
         filterMap.put("@DTOPath@", this.getClassPath("dto"));
         filterMap.put("@ModelPath@", this.getModelPath());
         filterMap.put("@ServicePath@", this.getClassPath("service"));
         filterMap.put("@Model@", this.getModelName());
         filterMap.put("@SeparateModel@", this.getSeparateModelName());
-        filterMap.put("@model@", this.getModelNameWithHeadLow());
+        filterMap.put("@model@", this.getModelNameWithFirstLetterLowercase());
         filterMap.put(" +@setModelCode@", this.setModelCode);
         filterMap.put(" +@setDTOCode@", this.setDTOCode);
         this.filter = new ReplaceFilter(filterMap);

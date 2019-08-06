@@ -9,42 +9,47 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Generator configuration.
+ *
+ * @author redoc
+ */
 public class GeneratorConfiguration {
 
     /**
-     * 父包
+     * Parent package.
      */
     private final String parentPackage;
     /**
-     * 子包
+     * Children package.
      */
     private final String childPackage;
     /**
-     * 代码生成目标目录
+     * File output dir.
      */
     private final String outputDir;
     /**
-     * Model类
+     * Model class.
      */
     private final Class<?> modelClazz;
     /**
-     * Model源码路径
+     * Model source path.
      */
     private final String modelSrcPath;
     /**
-     * Model属性
+     * Model properties.
      */
     private final ModelProperties modelProperties;
     /**
-     * 源码根目录
+     * Source root path.
      */
     private final String srcRootPath;
     /**
-     * 输出类型
+     * Output type.
      */
     private final String outputType;
     /**
-     * 是否覆盖原文件
+     * Whether to override.
      */
     private final boolean override;
     /**
@@ -67,7 +72,17 @@ public class GeneratorConfiguration {
      */
     private final List<String> one2OneObjectsName = new ArrayList<>();
 
-    public GeneratorConfiguration(final Class<?> modelClazz, String entityPackageName, final String outputType, final String outputDir,
+    /**
+     * Initial all necessary configuration.
+     *
+     * @param modelClazz       Model class.
+     * @param modelPackageName Model package name.
+     * @param outputType       Output type.
+     * @param outputDir        Output dir.
+     * @param override         Override.
+     * @param idType           ID type.
+     */
+    public GeneratorConfiguration(final Class<?> modelClazz, String modelPackageName, final String outputType, final String outputDir,
                                   final boolean override, SourceGenerator.IDType idType) {
         this.modelClazz = modelClazz;
         this.modelProperties = new ModelProperties(modelClazz);
@@ -80,7 +95,7 @@ public class GeneratorConfiguration {
         try {
             root = new File(URLDecoder.decode(url.getPath(), "utf-8"));
         } catch (final UnsupportedEncodingException e) {
-            throw new RuntimeException("获取Model源码路径失败.", e);
+            throw new RuntimeException("Get model source path error.", e);
         }
         final String classPath = root.getAbsolutePath();
         this.srcRootPath =
@@ -88,10 +103,10 @@ public class GeneratorConfiguration {
                         + "src.main.java.".replace(".", File.separator);
         this.modelSrcPath = this.srcRootPath + this.modelClazz.getName().replace(".", File.separator) + ".java";
         final String modelFullname = modelClazz.getName();
-        final int indexOfModelEntity = modelFullname.indexOf("." + entityPackageName + ".");
-        final int indexOfModelModel = modelFullname.indexOf("." + entityPackageName + ".");
+        final int indexOfModelEntity = modelFullname.indexOf("." + modelPackageName + ".");
+        final int indexOfModelModel = modelFullname.indexOf("." + modelPackageName + ".");
         int indexOfModel = indexOfModelEntity;
-        final int lengthModel = ("." + entityPackageName + ".").length() - 1;
+        final int lengthModel = ("." + modelPackageName + ".").length() - 1;
         if (indexOfModelEntity == -1) {
             indexOfModel = indexOfModelModel;
             if (indexOfModelModel == -1) {
@@ -145,65 +160,30 @@ public class GeneratorConfiguration {
         return this.override;
     }
 
-    /**
-     * Get the value of idType.
-     *
-     * @return The value of idType.
-     */
     public SourceGenerator.IDType getIdType() {
         return idType;
     }
 
-    /**
-     * Get the value of many2OneObjectsName.
-     *
-     * @return The value of many2OneObjectsName.
-     */
     public List<String> getMany2OneObjectsName() {
         return many2OneObjectsName;
     }
 
-    /**
-     * Set the many2OneObjectsName.
-     *
-     * @param many2OneObjectsName Many2OneObjectsName.
-     */
     public void setMany2OneObjectsName(List<String> many2OneObjectsName) {
         this.many2OneObjectsName.addAll(many2OneObjectsName);
     }
 
-    /**
-     * Get the value of one2ManyObjectsName.
-     *
-     * @return The value of one2ManyObjectsName.
-     */
     public List<String> getOne2ManyObjectsName() {
         return one2ManyObjectsName;
     }
 
-    /**
-     * Set the one2ManyObjectsName.
-     *
-     * @param one2ManyObjectsName One2ManyObjectsName.
-     */
     public void setOne2ManyObjectsName(List<String> one2ManyObjectsName) {
         this.one2ManyObjectsName.addAll(one2ManyObjectsName);
     }
 
-    /**
-     * Get the value of one2OneObjectsName.
-     *
-     * @return The value of one2OneObjectsName.
-     */
     public List<String> getOne2OneObjectsName() {
         return one2OneObjectsName;
     }
 
-    /**
-     * Set the one2OneObjectsName.
-     *
-     * @param one2OneObjectsName One2OneObjectsName.
-     */
     public void setOne2OneObjectsName(List<String> one2OneObjectsName) {
         this.one2OneObjectsName.addAll(one2OneObjectsName);
     }

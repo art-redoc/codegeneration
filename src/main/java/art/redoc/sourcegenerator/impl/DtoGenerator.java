@@ -2,7 +2,7 @@ package art.redoc.sourcegenerator.impl;
 
 import art.redoc.sourcegenerator.AbstractGenerator;
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
-import art.redoc.sourcegenerator.conts.CodeGenerateConts;
+import art.redoc.sourcegenerator.conts.CodeGenerateConstants;
 import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
 
 import java.io.IOException;
@@ -19,6 +19,11 @@ import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedContent;
 import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
 
+/**
+ * DTO generator.
+ *
+ * @author redoc
+ */
 public class DtoGenerator extends AbstractGenerator {
 
     private final String modelSource;
@@ -34,7 +39,6 @@ public class DtoGenerator extends AbstractGenerator {
         handleOneToOne(contentLine);
     }
 
-    // 初始化API文档信息
     private String initApiDocs(final String source) {
 //        final Pattern pattern = Pattern.compile("(/\\*\\*\\s+\\*\\s)(.+)(\\s+\\*/)");
         final String result = source;
@@ -79,7 +83,7 @@ public class DtoGenerator extends AbstractGenerator {
             if (lastCompile.matcher(content).matches()) {
                 break;
             }
-            contents.set(i, CodeGenerateConts.TO_BE_REMOVED);
+            contents.set(i, CodeGenerateConstants.TO_BE_REMOVED);
         }
         removeUnusedContent(contents);
         List<String> comments = new ArrayList<>();
@@ -131,7 +135,7 @@ public class DtoGenerator extends AbstractGenerator {
             addToBeRemovedContent(toBeRemoved, many2OneObjectsName, content, contents, i);
             addToBeRemovedContent(toBeRemoved, one2ManyObjectsName, content, contents, i);
         }
-        toBeRemoved.forEach(x -> x.forEach(y -> contents.set(y, CodeGenerateConts.TO_BE_REMOVED)));
+        toBeRemoved.forEach(x -> x.forEach(y -> contents.set(y, CodeGenerateConstants.TO_BE_REMOVED)));
         removeUnusedContent(contents);
         return contents;
     }
@@ -250,7 +254,7 @@ public class DtoGenerator extends AbstractGenerator {
             final int index = i;
             patterns.forEach(x -> {
                 if (x.matcher(content).matches()) {
-                    contents.set(index, CodeGenerateConts.TO_BE_REMOVED);
+                    contents.set(index, CodeGenerateConstants.TO_BE_REMOVED);
                 }
             });
         }

@@ -6,10 +6,15 @@ import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
 
 import java.util.Map;
 
+/**
+ * Service implement generator.
+ *
+ * @author redoc
+ */
 public class ServiceImplGenerator extends AbstractGenerator {
 
     // User-defined template path
-    private static final String templatePath = "/codetemplate/service-impl.template";
+    private static final String customTemplatePath = "/codetemplate/service-impl.template";
     // Default template path
     private static final String defaultTemplatePath = "/codetemplate/service-impl-default.template";
 
@@ -20,7 +25,7 @@ public class ServiceImplGenerator extends AbstractGenerator {
     public ServiceImplGenerator(final GeneratorConfiguration config) {
         super(config, "serviceImpl");
         this.initFilter();
-        this.templateContents = this.getFileString(this.getTemplatePath(templatePath, defaultTemplatePath));
+        this.templateContents = this.getFileString(this.getTemplatePath(customTemplatePath, defaultTemplatePath));
     }
 
     @Override
@@ -32,13 +37,13 @@ public class ServiceImplGenerator extends AbstractGenerator {
     private void initFilter() {
         final String servicePackage = this.getPackage("service") + ".impl";
 
-        final Map<String, String> filterMap = super.getFilterMapWithIdType();
+        final Map<String, String> filterMap = super.createFilterMapWithIdType();
         filterMap.put("@Package@", servicePackage);
         filterMap.put("@ServicePath@", this.getClassPath("service"));
         filterMap.put("@ModelPath@", this.getModelPath());
         filterMap.put("@Model@", this.getModelName());
         filterMap.put("@SeparateModel@", this.getSeparateModelName());
-        filterMap.put("@model@", this.getModelNameWithHeadLow());
+        filterMap.put("@model@", this.getModelNameWithFirstLetterLowercase());
         filterMap.put("@RepositoryPath@", this.getClassPath("repository"));
         this.filter = new ReplaceFilter(filterMap);
     }
