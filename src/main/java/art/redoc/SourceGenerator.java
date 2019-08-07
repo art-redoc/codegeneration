@@ -8,14 +8,13 @@ import art.redoc.sourcegenerator.impl.DtoGenerator;
 import art.redoc.sourcegenerator.impl.RepositoryGenerator;
 import art.redoc.sourcegenerator.impl.ServiceGenerator;
 import art.redoc.sourcegenerator.impl.ServiceImplGenerator;
-import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
+import art.redoc.sourcegenerator.utils.GeneratorUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 /**
- * todo 1.抽utils的公共方法 比如 在固定位置添加content等等
  * Please follow the steps below to configure the startup parameters: <br>
  * 1. Model path. e.g. com.leadingsoft.bizfuse.sourcegenerator.model <br>
  * 2. Model class name, separated by ','. e.g. User,Member,Role <br>
@@ -90,19 +89,7 @@ public class SourceGenerator {
     public static void generate(final String modelBasePackage, String[] models, String entityPackageName, Output outputType,
                                 boolean override, IDType idType, List<OutputFileType> fileType) throws ClassNotFoundException {
 
-//        if (args.length < 2) {
-//            System.out.println("Please follow the steps below to configure the startup parameters:");
-//            System.out.println("1. Model path. e.g. com.leadingsoft.bizfuse.sourcegenerator.model");
-//            System.out.println("2. Model class name, separated by ','. e.g. User,Member,Role");
-//            System.out.println("3. Output type, default type is 'FILE', 'CONSOLE' type will output to the CONSOLE. e.g. CONSOLE");
-//            System.out.println("4. whether to override, default is false. e.g. true");
-//            System.out.println("*****************e.g.*******************");
-//            System.out.println("java -jar code-generation-0.1.0.jar com.demo.user.model User,Member,Role CONSOLE true");
-//            System.out.println("*****************e.g.*******************");
-//            return;
-//        }
-
-        if (CodeGenerateUtils.isBlank(modelBasePackage) || null == models || models.length == 0) {
+        if (GeneratorUtils.isBlank(modelBasePackage) || null == models || models.length == 0) {
             throw new IllegalArgumentException("Illegal args");
         }
 
@@ -162,7 +149,7 @@ public class SourceGenerator {
         List<String> errors = new ArrayList<>();
         for (String model : models) {
             String className = modelBasePackage + "." + model;
-            if (!CodeGenerateUtils.isPresent(className)) {
+            if (!GeneratorUtils.isPresent(className)) {
                 errors.add(model);
             }
         }

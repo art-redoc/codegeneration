@@ -5,6 +5,6 @@ package art.redoc.sourcegenerator.conts;
  *
  * @author redoc
  */
-public class CodeGenerateConstants {
+public class GeneratorConstants {
     public final static String TO_BE_REMOVED = "@!$%TO_BE_REMOVED%$!@";
 }

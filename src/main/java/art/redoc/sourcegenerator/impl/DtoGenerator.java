@@ -2,11 +2,7 @@ package art.redoc.sourcegenerator.impl;
 
 import art.redoc.sourcegenerator.AbstractGenerator;
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
-import art.redoc.sourcegenerator.conts.CodeGenerateConstants;
-import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -15,9 +11,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedContent;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
+import static art.redoc.sourcegenerator.conts.GeneratorConstants.TO_BE_REMOVED;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.contents2value;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.removeUnusedContent;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.value2contents;
 
 /**
  * DTO generator.
@@ -26,32 +23,41 @@ import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
  */
 public class DtoGenerator extends AbstractGenerator {
 
+    private final static Pattern variablesPattern = Pattern.compile("\\s*private\\s+\\S+\\s+\\S+.*;");
+    private final Pattern classPattern = Pattern.compile(".+\\s+class\\s+" + this.getModelName() + ".+\\s+extends\\s+AbstractAuditDTO.*\\{.*");
+    private final String separateModelName = this.getSeparateModelName();
+    private final List<String> comments = new ArrayList<String>() {
+        {
+            add("");
+            add("/**");
+            add(" * " + separateModelName + " DTO.");
+            add(" *");
+            add(" * @author code generator");
+            add(" */");
+        }
+    };
+
+
     private final String modelSource;
 
+    /**
+     * Initial and validate resource.
+     *
+     * @param config Configuration.
+     */
     public DtoGenerator(final GeneratorConfiguration config) {
         super(config, "dto");
-        final String modelSource = this.getFileString(this.config.getModelSrcPath());
-        final List<String> contentLine = this.getContents();
-        this.modelSource = this.initApiDocs(modelSource);
+        this.modelSource = this.getFileString(this.config.getModelSrcPath());
+        final List<String> contentLine = value2contents(modelSource);
         checkMany2Many();
         handleManyToOne(contentLine);
         handleOneToMany(contentLine);
         handleOneToOne(contentLine);
     }
 
-    private String initApiDocs(final String source) {
-//        final Pattern pattern = Pattern.compile("(/\\*\\*\\s+\\*\\s)(.+)(\\s+\\*/)");
-        final String result = source;
-//        final Matcher matcher = pattern.matcher(source);
-        //        while (matcher.find()) {
-        //            final String originalStr = matcher.group(0);
-        //            final String docStr = matcher.group(2);
-        //            result = result.replace(originalStr,
-        //                    originalStr + System.lineSeparator() + "    @ApiModelProperty(\"" + docStr + "\")");
-        //        }
-        return result;
-    }
-
+    /**
+     * Forbidden to use {@code @ManyToMany}.
+     */
     private void checkMany2Many() {
         if (modelSource.contains("@ManyToMany")) {
             throw new RuntimeException("Forbidden to use @ManyToMany, please use two @ManyToOne instead.");
@@ -60,171 +66,225 @@ public class DtoGenerator extends AbstractGenerator {
 
     @Override
     public void generate() {
-        final String value = this.removeAndReplaceUnusedCode4Dto(this.modelSource);
-        final List<String> contents = removeJoinObjectsCode(value);
-        addJoinObjectsCode(contents);
+        final List<String> contents = this.removeAndReplaceUnusedCode4Dto(this.modelSource);
+        removeJoinRelatedCode(contents);
+        addJoinRelatedCode(contents);
         generateJavaDoc(contents);
         this.output(this.optimizeCode(contents2value(contents)));
     }
 
+    /**
+     * Generate the java doc of DTO.
+     *
+     * @param contents Contents.
+     */
     private void generateJavaDoc(List<String> contents) {
         final Pattern importCompile = Pattern.compile("import\\s.*");
-        final Pattern lastCompile = Pattern.compile("@[a-zA-Z].*|public\\sclass\\s.*");
+        final Pattern lastCompile = Pattern.compile("@[a-zA-Z].*|.+\\s+class\\s+" + this.getModelName() + ".+\\s+extends\\s" +
+                "+AbstractAuditDTO.*\\{.*");
         int importIndex = 0;
+        // Find the index of last 'import'
         for (int i = 0; i < contents.size(); i++) {
             final String content = contents.get(i);
             if (importCompile.matcher(content).matches()) {
                 importIndex = i;
             }
         }
-
+        // Mark these code as deleted,
+        // these code start with the index of last 'import' and end with the line where class or annotation is located.
         for (int i = importIndex + 1; i < contents.size(); i++) {
             final String content = contents.get(i);
             if (lastCompile.matcher(content).matches()) {
                 break;
             }
-            contents.set(i, CodeGenerateConstants.TO_BE_REMOVED);
+            contents.set(i, TO_BE_REMOVED);
         }
         removeUnusedContent(contents);
-        List<String> comments = new ArrayList<>();
-        comments.add("");
-        comments.add("/**");
-        comments.add(" * " + this.getSeparateModelName() + " DTO.");
-        comments.add(" *");
-        comments.add(" * @author code generator");
-        comments.add(" */");
+        // Generate the java doc.
         final int index = importIndex + 1;
         Collections.reverse(comments);
         comments.forEach(x -> contents.add(index, x));
     }
 
-    private void addJoinObjectsCode(List<String> content) {
+    /**
+     * Generate related code.
+     * <pre>
+     * e.g.     {@code private User user;}
+     * generate {@code private Long userId;}
+     * </pre>
+     *
+     * @param contents Contents.
+     */
+    private void addJoinRelatedCode(List<String> contents) {
         Integer classIndex = null;
-        for (int i = 0; i < content.size(); i++) {
-            if (content.get(i).contains(" extends AbstractAuditDTO {")) {
+        for (int i = 0; i < contents.size(); i++) {
+            if (classPattern.matcher(contents.get(i)).matches()) {
                 classIndex = i;
                 break;
             }
         }
         final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
         final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
-        generateJoinObjectsCode(content, classIndex, one2OneObjectsName);
-        generateJoinObjectsCode(content, classIndex, many2OneObjectsName);
-    }
-
-    private void generateJoinObjectsCode(List<String> content, Integer classIndex, List<String> objectsName) {
-        objectsName.forEach(x -> {
-            String code = "    private " + config.getIdType().getType() + " " + x + "Id;";
-            content.add(classIndex + 1, code);
-            content.add(classIndex + 1, "");
-        });
-    }
-
-    private List<String> removeJoinObjectsCode(String value) {
-        final List<String> contents = value2contents(value);
-        final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
-        final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
-        final List<String> one2ManyObjectsName = config.getOne2ManyObjectsName();
-
-        List<List<Integer>> toBeRemoved = new ArrayList<>();
-
-        for (int i = 0; i < contents.size(); i++) {
-            String content = contents.get(i);
-//            int index = i;
-            addToBeRemovedContent(toBeRemoved, one2OneObjectsName, content, contents, i);
-            addToBeRemovedContent(toBeRemoved, many2OneObjectsName, content, contents, i);
-            addToBeRemovedContent(toBeRemoved, one2ManyObjectsName, content, contents, i);
-        }
-        toBeRemoved.forEach(x -> x.forEach(y -> contents.set(y, CodeGenerateConstants.TO_BE_REMOVED)));
-        removeUnusedContent(contents);
-        return contents;
+        generateJoinRelatedCode(contents, classIndex, one2OneObjectsName);
+        generateJoinRelatedCode(contents, classIndex, many2OneObjectsName);
     }
 
     /**
-     * 标记需要被删除的content，针对三种情况的table join，one2one many2one one2many.
+     * Generate related code.
+     * <pre>
+     * e.g.     {@code private User user;}
+     * generate {@code private Long userId;}
+     * </pre>
      *
-     * @param toBeRemoved
-     * @param objectsNames
-     * @param content
-     * @param contents
-     * @param index
+     * @param contents Contents.
      */
-    private void addToBeRemovedContent(List<List<Integer>> toBeRemoved, List<String> objectsNames, String content,
-                                       List<String> contents, int index) {
-        objectsNames.forEach(objectsName -> {
-            List<Integer> toBeRemovedIndex = new ArrayList<>();
-            // todo pattern
-            if (content.contains("private") && (content.contains(" " + objectsName + " ") || content.contains(" " + objectsName + ";"))) {
-                toBeRemovedIndex.add(index);
-                int current = index - 1;
-                //需要删除 table join 字段上那些多于的注解，比如 @ManyToOne @NotNull 等等 一口气都删了
-                while (!contents.get(current).contains("private") && !contents.get(current).contains(" class ")) {
-                    toBeRemovedIndex.add(current);
-                    current--;
-                }
-            }
-            if (toBeRemovedIndex.size() > 0) {
-                toBeRemoved.add(toBeRemovedIndex);
-            }
+    private void generateJoinRelatedCode(List<String> contents, Integer classIndex, List<String> objectsName) {
+        objectsName.forEach(x -> {
+            String code = "    private " + config.getIdType().getType() + " " + x + "Id;";
+            contents.add(classIndex + 1, code);
+            contents.add(classIndex + 1, "");
         });
     }
 
+    /**
+     * Remove about join code, the join code include {@code @OneToMany},{@code @ManyToOne} and {@code @OneToOne}.
+     *
+     * @param contents Contents.
+     */
+    private void removeJoinRelatedCode(List<String> contents) {
+        markJoinRelatedCode("@ManyToOne", contents);
+        markJoinRelatedCode("@OneToMany", contents);
+        markJoinRelatedCode("@OneToOne", contents);
+        removeUnusedContent(contents);
+    }
+
+    /**
+     * Mark the join related code as {@code TO_BE_REMOVED}.
+     *
+     * @param annotationName Annotation name.
+     * @param contents       Contents.
+     */
+    private void markJoinRelatedCode(String annotationName, List<String> contents) {
+        final List<Integer> indexes = new ArrayList<>();
+        // The first character after the annotation cannot be a number or a letter.
+        final Pattern compile = Pattern.compile("\\s*" + annotationName + "[^a-zA-Z\\d].*");
+        for (int i = 0; i < contents.size(); i++) {
+            String content = contents.get(i) + " ";
+            if (compile.matcher(content).matches()) {
+                contents.set(i, TO_BE_REMOVED);
+                indexes.add(i);
+            }
+        }
+        indexes.forEach(x -> {
+            // Mark forwards.
+            int beforeIndex = x - 1;
+            String beforeContent = contents.get(beforeIndex);
+            while (!variablesPattern.matcher(beforeContent).matches()) {
+                contents.set(beforeIndex, TO_BE_REMOVED);
+                beforeIndex--;
+                beforeContent = contents.get(beforeIndex);
+            }
+            // Mark backwards.
+            int afterIndex = x + 1;
+            String afterContent = contents.get(afterIndex);
+            while (!variablesPattern.matcher(afterContent).matches()) {
+                contents.set(afterIndex, TO_BE_REMOVED);
+                afterIndex++;
+                afterContent = contents.get(afterIndex);
+            }
+            // Mark the annotated variables.
+            contents.set(afterIndex, TO_BE_REMOVED);
+        });
+    }
+
+    /**
+     * Handle {@code @OneToMany} annotation in model.
+     *
+     * @param contents Contents.
+     */
     private void handleOneToMany(List<String> contents) {
-        List<String> one2ManyObject = getJoinObjectsByAnnotation(contents, "@OneToMany");
+        List<String> one2ManyObject = getJoinVariableNameByAnnotation(contents, "@OneToMany");
         config.setOne2ManyObjectsName(one2ManyObject);
     }
 
+    /**
+     * Handle {@code @ManyToOne} annotation in model.
+     *
+     * @param contents Contents.
+     */
     private void handleManyToOne(List<String> contents) {
-        List<String> many2OneObject = getJoinObjectsByAnnotation(contents, "@ManyToOne");
+        List<String> many2OneObject = getJoinVariableNameByAnnotation(contents, "@ManyToOne");
         config.setMany2OneObjectsName(many2OneObject);
     }
 
+    /**
+     * Handle {@code @OneToOne} annotation in model.
+     *
+     * @param contents Contents.
+     */
     private void handleOneToOne(List<String> contents) {
-        List<String> one2OneObject = getJoinObjectsByAnnotation(contents, "@OneToOne");
+        List<String> one2OneObject = getJoinVariableNameByAnnotation(contents, "@OneToOne");
         config.setOne2OneObjectsName(one2OneObject);
     }
 
-    private List<String> getJoinObjectsByAnnotation(List<String> contents, String annotationName) {
+    /**
+     * Get the variable name list, the variable name include {@code @OneToMany},{@code @ManyToOne} and {@code @OneToOne}.
+     *
+     * <pre>
+     * e.g.          {@code @ManyToOne
+     *                      private User user;}
+     * The result is {@code Arrays.asList("user")}.
+     * </pre>
+     *
+     * @param contents       Contents.
+     * @param annotationName Annotation name.
+     * @return Variable name list.
+     */
+    private List<String> getJoinVariableNameByAnnotation(List<String> contents, String annotationName) {
         final List<String> result = new ArrayList<>();
         final Iterator<String> iterator = contents.iterator();
-        final Pattern compile = Pattern.compile("\\s*private\\s+.*;");
         while (iterator.hasNext()) {
             final String next = iterator.next();
             if (next.contains(annotationName)) {
                 String content = iterator.next();
-                while (!compile.matcher(content).matches()) {
+                // If the current line is not the same line as the variable, the pointer continues to move down.
+                while (!variablesPattern.matcher(content).matches()) {
                     content = iterator.next();
                 }
+                // The line of the variable has been found, split by " " and take the third element.
                 result.add(content.trim().replaceAll(" +", " ").split(" ")[2].replace(";", ""));
             }
         }
         return result;
     }
 
-    private List<String> getContents() {
-        try {
-            final InputStream is = this.getInputStream(this.config.getModelSrcPath());
-            return CodeGenerateUtils.readLines(is, "UTF-8");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-
-    private String removeAndReplaceUnusedCode4Dto(String modelSource) {
+    /**
+     * Remove and replace unused code.
+     *
+     * @param modelSource Model source.
+     * @return Contents.
+     */
+    private List<String> removeAndReplaceUnusedCode4Dto(String modelSource) {
         final List<String> contents = value2contents(modelSource);
         removeUnusedCode(contents);
         replaceCode(contents);
-        return contents2value(contents);
+        return contents;
     }
 
+    /**
+     * Replace code.
+     *
+     * @param contents Contents.
+     */
     private void replaceCode(List<String> contents) {
         Map<Pattern, String> patterns = new HashMap<>();
+        // Replace about package.
         patterns.put(Pattern.compile("package.+;"), "package " + this.getPackage("dto") + ";" + System.lineSeparator()
                 + "import art.redoc.base.dto.AbstractAuditDTO;");
+        // Replace about 'public class extents xxx'.
         patterns.put(Pattern.compile("public class.+\\{"), "public class " + this.config.getModelClazz().getSimpleName() + "DTO extends " +
                 "AbstractAuditDTO {");
+        // Replace ID type by configuration.
         patterns.put(Pattern.compile("@IDType@"), config.getIdType().getType());
         for (int i = 0; i < contents.size(); i++) {
             String content = contents.get(i);
@@ -237,6 +297,11 @@ public class DtoGenerator extends AbstractGenerator {
         }
     }
 
+    /**
+     * Remove unused code by pattern.
+     *
+     * @param contents Contents.
+     */
     private void removeUnusedCode(List<String> contents) {
         List<Pattern> patterns = new ArrayList<>();
         patterns.add(Pattern.compile("import javax\\.persistence+.+;"));
@@ -254,7 +319,7 @@ public class DtoGenerator extends AbstractGenerator {
             final int index = i;
             patterns.forEach(x -> {
                 if (x.matcher(content).matches()) {
-                    contents.set(index, CodeGenerateConstants.TO_BE_REMOVED);
+                    contents.set(index, TO_BE_REMOVED);
                 }
             });
         }

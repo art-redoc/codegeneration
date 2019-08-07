@@ -1,7 +1,7 @@
 package art.redoc.sourcegenerator;
 
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
-import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
+import art.redoc.sourcegenerator.utils.GeneratorUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -16,12 +16,12 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.addEmptyLine;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.addEmptyLineInTheLastLine;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeEmptyLineAtEndMethod;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.removeUnusedImport;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.addEmptyLine;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.addEmptyLineInTheLastLine;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.contents2value;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.removeEmptyLineAtEndMethod;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.removeUnusedImport;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.value2contents;
 
 /**
  * Abstract Generator.
@@ -68,7 +68,8 @@ public abstract class AbstractGenerator implements Generator {
             final String outputPath = this.getFileOutputPath();
             final File outputFile = new File(outputPath);
             if (!this.config.isOverride() && outputFile.exists()) {
-                System.out.println(outputPath + "The file already exists and the override is false, the override operation is not allowed, " +
+                System.out.println(outputPath + "The file already exists and the override is false, the override operation is not " +
+                        "allowed, " +
                         "and the generated code is as follows:");
                 System.out.println("////////////////////////////");
                 System.out.println("/// " + this.method + "file output");
@@ -125,7 +126,7 @@ public abstract class AbstractGenerator implements Generator {
     protected String getFileString(final String path) {
         try (final InputStream is = this.getInputStream(path);
              final ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-            CodeGenerateUtils.copy(is, os);
+            GeneratorUtils.copy(is, os);
             return os.toString("UTF-8");
         } catch (final IOException e) {
             throw new RuntimeException(e.getMessage(), e);
@@ -245,11 +246,11 @@ public abstract class AbstractGenerator implements Generator {
     }
 
     /**
-     * Get template path.
+     * Get template path, if the custom template path is not exists, using the default template path.
      *
      * @param customTemplatePath  Custom template path.
      * @param defaultTemplatePath Default template path.
-     * @return
+     * @return Template path.
      */
     protected String getTemplatePath(String customTemplatePath, String defaultTemplatePath) {
         final InputStream inputStream = AbstractGenerator.class.getResourceAsStream(customTemplatePath);

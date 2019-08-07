@@ -1,7 +1,7 @@
 package art.redoc.sourcegenerator;
 
 /**
- * Generator
+ * Generator.
  *
  * @author redoc
  */

@@ -1,7 +1,7 @@
 package art.redoc.sourcegenerator;
 
 /**
- * Contents filter
+ * Contents filter.
  *
  * @author redoc
  */

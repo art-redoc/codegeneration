@@ -61,7 +61,7 @@ public class ConvertorGenerator extends AbstractGenerator {
         final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
         final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
         final List<String> one2ManyObjectsName = config.getOne2ManyObjectsName();
-        // Filter out other join model and generate the remaining properties.
+        // Filter out other join model like '@ManyToOne', '@OneToMany' or '@OneToOne' and generate the remaining properties.
         this.config.getModelProperties().getProperties().stream().filter(x ->
                 !one2OneObjectsName.contains(x.getName())
                         && !many2OneObjectsName.contains(x.getName())

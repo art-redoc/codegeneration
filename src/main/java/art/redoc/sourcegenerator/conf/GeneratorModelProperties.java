@@ -7,15 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Model properties.
+ * Generator model properties.
  *
  * @author redoc
  */
-public class ModelProperties {
+public class GeneratorModelProperties {
 
     private final List<ModelProperty> properties = new ArrayList<>();
 
-    public ModelProperties(final Class<?> clazz) {
+    public GeneratorModelProperties(final Class<?> clazz) {
         final Field fields[] = clazz.getDeclaredFields();
         for (final Field field : fields) {
             if ((field.getModifiers() & Modifier.STATIC) != 0) {

@@ -36,7 +36,6 @@ public class ServiceImplGenerator extends AbstractGenerator {
 
     private void initFilter() {
         final String servicePackage = this.getPackage("service") + ".impl";
-
         final Map<String, String> filterMap = super.createFilterMapWithIdType();
         filterMap.put("@Package@", servicePackage);
         filterMap.put("@ServicePath@", this.getClassPath("service"));

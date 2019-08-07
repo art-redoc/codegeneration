@@ -35,12 +35,11 @@ public class ServiceGenerator extends AbstractGenerator {
     }
 
     private void initFilter() {
-
-        final Map<String, String> serviceFilterMap = super.createFilterMapWithIdType();
-        serviceFilterMap.put("@Package@", this.getPackage("service"));
-        serviceFilterMap.put("@ModelPath@", this.getModelPath());
-        serviceFilterMap.put("@Model@", this.getModelName());
-        serviceFilterMap.put("@SeparateModel@", this.getSeparateModelName());
-        this.filter = new ReplaceFilter(serviceFilterMap);
+        final Map<String, String> filterMap = super.createFilterMapWithIdType();
+        filterMap.put("@Package@", this.getPackage("service"));
+        filterMap.put("@ModelPath@", this.getModelPath());
+        filterMap.put("@Model@", this.getModelName());
+        filterMap.put("@SeparateModel@", this.getSeparateModelName());
+        this.filter = new ReplaceFilter(filterMap);
     }
 }

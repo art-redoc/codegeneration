@@ -39,7 +39,7 @@ public class GeneratorConfiguration {
     /**
      * Model properties.
      */
-    private final ModelProperties modelProperties;
+    private final GeneratorModelProperties modelProperties;
     /**
      * Source root path.
      */
@@ -85,7 +85,7 @@ public class GeneratorConfiguration {
     public GeneratorConfiguration(final Class<?> modelClazz, String modelPackageName, final String outputType, final String outputDir,
                                   final boolean override, SourceGenerator.IDType idType) {
         this.modelClazz = modelClazz;
-        this.modelProperties = new ModelProperties(modelClazz);
+        this.modelProperties = new GeneratorModelProperties(modelClazz);
         this.outputDir = outputDir;
         this.outputType = outputType;
         this.override = override;
@@ -140,7 +140,7 @@ public class GeneratorConfiguration {
         return this.childPackage;
     }
 
-    public ModelProperties getModelProperties() {
+    public GeneratorModelProperties getModelProperties() {
         return this.modelProperties;
     }
 

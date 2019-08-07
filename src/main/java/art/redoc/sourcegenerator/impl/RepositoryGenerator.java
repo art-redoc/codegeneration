@@ -3,13 +3,14 @@ package art.redoc.sourcegenerator.impl;
 import art.redoc.sourcegenerator.AbstractGenerator;
 import art.redoc.sourcegenerator.ContentsFilter;
 import art.redoc.sourcegenerator.conf.GeneratorConfiguration;
-import art.redoc.sourcegenerator.utils.CodeGenerateUtils;
+import art.redoc.sourcegenerator.utils.GeneratorUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.contents2value;
-import static art.redoc.sourcegenerator.utils.CodeGenerateUtils.value2contents;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.contents2value;
+import static art.redoc.sourcegenerator.utils.GeneratorUtils.value2contents;
 
 /**
  * Repository generator.
@@ -41,48 +42,90 @@ public class RepositoryGenerator extends AbstractGenerator {
         this.output(this.optimizeCode(contents2value(contents)));
     }
 
-    private List<String> generateJoinMethod(List<String> contents) {
-
-        int mainIndex = 0;
-        int listIndex = 0;
+    /**
+     * Generate join method for repository.
+     *
+     * @param contents Contents.
+     * @return Contents.
+     */
+    private void generateJoinMethod(List<String> contents) {
+        int interfaceIndex = 0;
+        int lastImportIndex = 0;
+        final Pattern interfaceCompile = Pattern.compile("\\s*public\\s+interface\\s+.*\\{\\s*");
+        final Pattern lastImportCompile = Pattern.compile("import\\s.*");
         for (int i = 0; i < contents.size(); i++) {
-            if (CodeGenerateUtils.isNotBlank(contents.get(i)) && contents.get(i).contains(" interface ")) {
-                mainIndex = i;
+            final String content = contents.get(i);
+            // Find the index of the 'interface' location.
+            if (interfaceCompile.matcher(content).matches()) {
+                interfaceIndex = i;
                 continue;
             }
-            if (CodeGenerateUtils.isNotBlank(contents.get(i)) && contents.get(i).contains("import ")) {
-                listIndex = i;
-                continue;
+            // Find the index of last 'import'
+            if (lastImportCompile.matcher(content).matches()) {
+                lastImportIndex = i;
             }
         }
-        return generateJoinMethodCode(contents, mainIndex, listIndex);
+        generateMany2OneMethodCode(contents, interfaceIndex, lastImportIndex);
+        generateOne2OneMethodCode(contents, interfaceIndex);
     }
 
-    private List<String> generateJoinMethodCode(List<String> contents, int mainIndex, int listIndex) {
-        boolean isRequiredToAddImport = false;
+    /**
+     * Generate many to one method code.
+     * <pre>
+     * e.g.
+     * {@code @ManyToOne}
+     * {@code private User user;}
+     *
+     * Required to generate the code as follows:
+     * {@code List<User> findByUserId(Long userId);}
+     * </pre>
+     *
+     * @param contents        Contents.
+     * @param interfaceIndex  Interface index.
+     * @param lastImportIndex Last import index.
+     */
+    private void generateMany2OneMethodCode(List<String> contents, int interfaceIndex, int lastImportIndex) {
         if (config.getMany2OneObjectsName().size() > 0) {
             final List<String> many2OneObjectsName = config.getMany2OneObjectsName();
             many2OneObjectsName.forEach(x -> {
-                String code = "    List<" + this.getModelName() + "> findBy" + CodeGenerateUtils.capitalize(x) + "Id(String id);";
-                contents.add(mainIndex + 1, code);
-                contents.add(mainIndex + 1, "");
+                String code =
+                        "    List<" + this.getModelName() + "> findBy" + GeneratorUtils.capitalize(x) + "Id("
+                                + this.config.getIdType().getType() + " " + x + "Id);";
+                contents.add(interfaceIndex + 1, code);
+                contents.add(interfaceIndex + 1, "");
             });
-            isRequiredToAddImport = true;
+
+            // Add additional import.
+            contents.add(lastImportIndex + 1, "import java.util.List;");
+            contents.add(lastImportIndex + 1, "");
         }
+    }
+
+    /**
+     * Generate one to one method code.
+     * <pre>
+     * e.g.
+     * {@code @OneToOne}
+     * {@code private User user;}
+     *
+     * Required to generate the code as follows:
+     * {@code User findByUserId(Long userId);}
+     * </pre>
+     *
+     * @param contents       Contents.
+     * @param interfaceIndex Interface index.
+     */
+    private void generateOne2OneMethodCode(List<String> contents, int interfaceIndex) {
         if (config.getOne2OneObjectsName().size() > 0) {
             final List<String> one2OneObjectsName = config.getOne2OneObjectsName();
             one2OneObjectsName.forEach(x -> {
-                String code = "    " + this.getModelName() + " findBy" + CodeGenerateUtils.capitalize(x) + "Id(String id);";
-                contents.add(mainIndex + 1, code);
-                contents.add(mainIndex + 1, "");
+                String code =
+                        "    " + this.getModelName() + " findBy" + GeneratorUtils.capitalize(x) + "Id("
+                                + this.config.getIdType().getType() + " " + x + "Id);";
+                contents.add(interfaceIndex + 1, code);
+                contents.add(interfaceIndex + 1, "");
             });
-            isRequiredToAddImport = true;
         }
-        if(isRequiredToAddImport){
-            contents.add(listIndex + 1, "import java.util.List;");
-            contents.add(listIndex + 1, "");
-        }
-        return contents;
     }
 
     private void initFilter() {

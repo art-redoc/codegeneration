@@ -5,6 +5,11 @@ import art.redoc.sourcegenerator.ContentsFilter;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Skip filter.
+ *
+ * @author redoc
+ */
 public class SkipFilter implements ContentsFilter {
 
     private final List<String> skipList;

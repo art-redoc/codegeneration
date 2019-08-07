@@ -1,6 +1,6 @@
 package art.redoc.sourcegenerator.utils;
 
-import art.redoc.sourcegenerator.conts.CodeGenerateConstants;
+import art.redoc.sourcegenerator.conts.GeneratorConstants;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,16 +18,16 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
- * Code generate utils.
+ * Generator utils.
  *
  * @author redoc
  */
-public class CodeGenerateUtils {
+public class GeneratorUtils {
 
     /**
      * This is a utility class.
      */
-    private CodeGenerateUtils() {
+    private GeneratorUtils() {
         throw new IllegalStateException("Utility class");
     }
 
@@ -205,7 +205,7 @@ public class CodeGenerateUtils {
      * @param contents Contents.
      */
     public static void removeUnusedContent(List<String> contents) {
-        contents.removeAll(Arrays.asList(CodeGenerateConstants.TO_BE_REMOVED));
+        contents.removeAll(Arrays.asList(GeneratorConstants.TO_BE_REMOVED));
     }
 
     /**
@@ -230,7 +230,7 @@ public class CodeGenerateUtils {
             int currentIndex = contents.size() - 2;
             String currentContent = contents.get(currentIndex);
             while (isBlank(currentContent)) {
-                contents.set(currentIndex, CodeGenerateConstants.TO_BE_REMOVED);
+                contents.set(currentIndex, GeneratorConstants.TO_BE_REMOVED);
                 currentIndex--;
                 currentContent = contents.get(currentIndex);
             }
@@ -245,6 +245,7 @@ public class CodeGenerateUtils {
      */
     public static void removeUnusedImport(List<String> contents) {
         final List<Import> imports = new ArrayList<>();
+        // Collect the import information.
         for (int i = 0; i < contents.size(); i++) {
             final String content = contents.get(i);
             if (content.startsWith("import") && !content.contains("*")) {
@@ -255,6 +256,7 @@ public class CodeGenerateUtils {
                 imports.add(clazz);
             }
         }
+        // Mark the unused code as deleted.
         contents.forEach(content -> {
             imports.forEach(x -> {
                 if (Pattern.matches("(?!import)(?!package).*[^a-zA-Z\\d]" + x.getClassName() + "[^a-zA-Z\\d].*", content + " ")) {
@@ -263,7 +265,7 @@ public class CodeGenerateUtils {
                 }
             });
         });
-        imports.stream().filter(x -> x.getRemoved()).forEach(x -> contents.set(x.getIndex(), CodeGenerateConstants.TO_BE_REMOVED));
+        imports.stream().filter(x -> x.getRemoved()).forEach(x -> contents.set(x.getIndex(), GeneratorConstants.TO_BE_REMOVED));
         removeUnusedContent(contents);
     }
 
@@ -338,7 +340,7 @@ public class CodeGenerateUtils {
         for (int i = 0; i < contents.size(); i++) {
             final String content = contents.get(i);
             if (i > 0 && isBlank(contents.get(i - 1)) && isBlank(content)) {
-                contents.set(i - 1, CodeGenerateConstants.TO_BE_REMOVED);
+                contents.set(i - 1, GeneratorConstants.TO_BE_REMOVED);
             }
         }
         removeUnusedContent(contents);
