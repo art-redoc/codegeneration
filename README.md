@@ -1,2 +1,2 @@
-# codegeneration
-Code generation
+# codegenerator
+Code generator
